@@ -6,10 +6,10 @@ const render = util.promisify(aglio.renderFile)
 const exmaples = async () => {
   const v = await Promise.all(
     themes.map(async theme => {
-      await render("example.apib", `examples/${theme}.html`, {
+      await render("example/example.apib", `docs/${theme}.html`, {
         themeVariables: theme,
       })
-      await render("example.apib", `examples/${theme}-triple.html`, {
+      await render("example/example.apib", `docs/${theme}-triple.html`, {
         themeVariables: theme,
         themeTemplate: "triple",
       })
