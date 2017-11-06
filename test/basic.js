@@ -24,9 +24,8 @@ describe("API Blueprint Renderer", function() {
   })
 
   it("Case1: Should load the default theme", function() {
-    const theme = aglio.getTheme("default")
-
-    assert.ok(theme)
+    const theme = aglio.getTheme("olio")
+    assert.ok(theme != null)
   })
 
   it("Case2: Should get a list of included files", function() {
@@ -50,7 +49,7 @@ More content...\
   })
 
   it("Case3: Should render blank string", function(done) {
-    aglio.render("", { template: "default", locals: { foo: 1 } }, function(
+    aglio.render("", { template: "olio", locals: { foo: 1 } }, function(
       err,
       html
     ) {
@@ -67,7 +66,7 @@ More content...\
   it("Case4: Should render a complex document", function(done) {
     aglio.render(
       blueprint,
-      { theme: "default", includePath: path.join(root, "example") },
+      { theme: "olio", includePath: path.join(root, "example") },
       function(err, html) {
         if (err) {
           return done(err)
@@ -87,7 +86,7 @@ More content...\
     done
   ) {
     const temp = "# GET /message\r\n+ Response 200 (text/plain)\r\r\t\tHello!\n"
-    aglio.render(temp, { theme: "default" }, done)
+    aglio.render(temp, { theme: "olio" }, done)
   })
 
   it("Case6: Should render a custom template by filename", function(done) {
@@ -107,7 +106,7 @@ More content...\
     const temp = "# GET /message\r\n+ Response 200 (text/plain)\r\r\t\tHello!\n"
     const filteredTemp = temp.replace(/\r\n?/g, "\n").replace(/\t/g, "    ")
 
-    aglio.render(temp, { theme: "default" }, function(err, html, warnings) {
+    aglio.render(temp, { theme: "olio" }, function(err, html, warnings) {
       if (err) {
         return done(err)
       }
@@ -134,7 +133,7 @@ More content...\
 
     setTimeout(() => process.stdin.emit("readable", 1))
 
-    aglio.renderFile("-", "example.html", { theme: "default" }, function(err) {
+    aglio.renderFile("-", "example.html", { theme: "olio" }, function(err) {
       if (err) {
         process.stdin.read.restore()
         return done(err)
@@ -154,7 +153,7 @@ More content...\
     aglio.renderFile(
       example,
       "-",
-      { theme: "default", includePath: path.join(root, "example") },
+      { theme: "olio", includePath: path.join(root, "example") },
       function(err) {
         if (err) {
           console.log.restore()
@@ -223,7 +222,9 @@ More content...\
   })
 
   it("Case15: Should error on missing input file", function(done) {
-    aglio.renderFile("missing", "output.html", "default", function(err) {
+    aglio.renderFile("missing", "output.html", { theme: "olio" }, function(
+      err
+    ) {
       assert(err)
 
       aglio.compileFile("missing", "output.apib", function(err) {
@@ -252,7 +253,7 @@ More content...\
 
     aglio.render(
       blueprint,
-      { theme: "default", includePath: path.join(root, "example") },
+      { theme: "olio", includePath: path.join(root, "example") },
       function(err) {
         assert(err)
 
@@ -268,7 +269,7 @@ More content...\
       callback("error")
     )
 
-    aglio.renderFile("foo", "bar", "default", function(err) {
+    aglio.renderFile("foo", "bar", { theme: "olio" }, function(err) {
       assert(err)
 
       fs.readFile.restore()
@@ -280,7 +281,7 @@ More content...\
   it("Case19: Should error on file write failure", function(done) {
     sinon.stub(fs, "writeFile", (filename, data, callback) => callback("error"))
 
-    aglio.renderFile("foo", "bar", "default", function(err) {
+    aglio.renderFile("foo", "bar", { theme: "olio" }, function(err) {
       assert(err)
 
       fs.writeFile.restore()
@@ -294,7 +295,7 @@ More content...\
       callback("error")
     )
 
-    aglio.renderFile(example, "bar", "default", function(err) {
+    aglio.renderFile(example, "bar", { theme: "olio" }, function(err) {
       assert(err)
 
       aglio.render.restore()
@@ -336,9 +337,7 @@ describe("Executable", function() {
       callback(null, warnings)
     })
 
-    bin.run({}, err => assert(err))
-
-    bin.run({ i: example, o: "-" }, function() {
+    bin.run({ i: example, o: "-", theme: "olio" }, function() {
       console.error.restore()
       aglio.renderFile.restore()
       done()
@@ -365,6 +364,9 @@ describe("Executable", function() {
         // Simulate requests
         let req = { url: "/favicon.ico" }
         let res = {
+          writeHead() {
+            return false
+          },
           end(data) {
             assert(!data)
           },
@@ -374,7 +376,7 @@ describe("Executable", function() {
         req = { url: "/" }
         res = {
           writeHead() {
-            false
+            return false
           },
           end() {
             aglio.render.restore()
@@ -396,7 +398,7 @@ describe("Executable", function() {
     sinon.stub(console, "log")
     sinon.stub(console, "error")
 
-    bin.run({ s: true }, function(err) {
+    bin.run({ s: true, theme: "olio" }, function(err) {
       console.error.restore()
       assert(err)
 
@@ -406,6 +408,7 @@ describe("Executable", function() {
           s: true,
           p: 3000,
           h: "localhost",
+          theme: "olio",
         },
         function(err) {
           assert.equal(err, null)
@@ -430,7 +433,7 @@ describe("Executable", function() {
       throw new Error("Could not load theme")
     })
 
-    bin.run({ template: "invalid" }, function(err) {
+    bin.run({ theme: "invalid" }, function(err) {
       console.error.restore()
       aglio.getTheme.restore()
       assert(err)
@@ -450,7 +453,7 @@ describe("Executable", function() {
 
     sinon.stub(console, "error")
 
-    bin.run({ i: example, o: "-" }, function() {
+    bin.run({ i: example, o: "-", theme: "olio" }, function() {
       assert(console.error.called)
 
       console.error.restore()

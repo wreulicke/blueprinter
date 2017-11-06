@@ -73,25 +73,26 @@ exports.render = function(input, options, done) {
   }
 
   // Defaults
-  const {
-    filterInput = true,
-    includePath = process.cwd(),
-    theme = "default",
-  } = options
+  options = {
+    filterInput: true,
+    includePath: process.cwd(),
+    theme: "olio",
+    ...options,
+  }
 
-  if (fs.existsSync(theme)) {
+  if (fs.existsSync(options.theme)) {
     console.log(`Setting theme to olio and layout to ${options.theme}`)
     options.themeLayout = options.theme
     options.theme = "olio"
   }
 
   // Handle custom directive(s)
-  input = includeDirective(includePath, input)
+  input = includeDirective(options.includePath, input)
 
   // Drafter does not support \r ot \t in the input, so
   // try to intelligently massage the input so that it works.
   // This is required to process files created on Windows.
-  const filteredInput = !filterInput
+  const filteredInput = !options.filterInput
     ? input
     : input.replace(/\r\n?/g, "\n").replace(/\t/g, "    ")
 

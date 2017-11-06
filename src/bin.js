@@ -25,7 +25,7 @@ const parser = require("yargs")
   .options("t", {
     alias: "theme",
     describe: "Theme name or layout file",
-    default: "default",
+    default: "olio",
   })
   .options("f", {
     alias: "filter",
@@ -113,9 +113,9 @@ const logError = function(err, verbose) {
   if (verbose) {
     const pe = new PrettyError()
     pe.setMaxItems(5)
-    return console.error(pe.render(err))
+    console.error(pe.render(err))
   } else {
-    return console.error(cErr(">>"), err)
+    console.error(cErr(">>"), err)
   }
 }
 
@@ -130,18 +130,18 @@ exports.run = function(argv, done) {
   let _html = null
   const getHtml = function(cb) {
     if (_html) {
-      return cb && cb(null, _html)
+      cb && cb(null, _html)
     } else {
-      return fs.readFile(argv.i, "utf-8", function(err, blueprint) {
+      fs.readFile(argv.i, "utf-8", function(err, blueprint) {
         console.log(`Rendering ${argv.i}`)
-        return aglio.render(blueprint, argv, function(err, html, warnings) {
+        aglio.render(blueprint, argv, function(err, html, warnings) {
           logWarnings(warnings)
           if (err) {
             logError(err, argv.verbose)
-            return cb && cb(err)
+            cb && cb(err)
           } else {
             _html = html
-            return cb && cb(null, _html)
+            cb && cb(null, _html)
           }
         })
       })
@@ -151,18 +151,14 @@ exports.run = function(argv, done) {
   if (argv.version) {
     console.log(`aglio ${require("../package.json").version}`)
     console.log(`olio ${require("aglio-theme-olio/package.json").version}`)
-    return done()
-  }
-
-  // The option used to be called `template`
-  if (argv.template) {
-    argv.theme = argv.template
+    done()
+    return
   }
 
   // Backward-compatible support for -t /path/to/layout.jade
   if (fs.existsSync(argv.theme)) {
     argv.themeTemplate = argv.theme
-    argv.theme = "default"
+    argv.theme = "olio"
   }
 
   // Add theme options to the help output
@@ -175,7 +171,8 @@ exports.run = function(argv, done) {
     const err = error
     err.message = `Could not load theme: ${err.message}`
     logError(err, argv.verbose)
-    return done(err)
+    done(err)
+    return
   }
 
   const config = theme.getConfig()
@@ -186,7 +183,8 @@ exports.run = function(argv, done) {
   if (argv.s) {
     if (!argv.i) {
       parser.showHelp()
-      return done("Invalid arguments")
+      done("Invalid arguments")
+      return
     }
 
     argv.locals = { livePreview: true }
@@ -201,13 +199,14 @@ exports.run = function(argv, done) {
       .createServer(function(req, res) {
         if (req.url !== "/") {
           const serve = serveStatic(path.dirname(argv.i))
-          return serve(req, res, () => res.end())
+          serve(req, res, () => res.end())
+          return
         }
 
-        return getHtml(function(err, html) {
+        getHtml(function(err, html) {
           res.writeHead(200, { "Content-Type": "text/html" })
 
-          return res.end(err ? err.toString() : html)
+          res.end(err ? err.toString() : html)
         })
       })
       .listen(argv.p, argv.h, () =>
@@ -220,14 +219,14 @@ exports.run = function(argv, done) {
           console.log("Refresh web page in browser")
           const re = /<body.*?>[^]*<\/body>/gi
           html = html.match(re)[0]
-          return socket.emit("refresh", html)
+          socket.emit("refresh", html)
         }
       })
 
     const io = require("socket.io")(server)
     io.on("connection", function(socket) {
       console.log("Socket connected")
-      return socket.on("request-refresh", () => sendHtml(socket))
+      socket.on("request-refresh", () => sendHtml(socket))
     })
 
     const paths = aglio.collectPathsSync(
@@ -239,15 +238,16 @@ exports.run = function(argv, done) {
     watcher.on("change", function(path) {
       console.log(`Updated ${path}`)
       _html = null
-      return sendHtml(io)
+      sendHtml(io)
     })
 
-    return done()
+    done()
   } else {
     // Render or Compile API Blueprint, requires input/output files
     if (!argv.i || !argv.o) {
       parser.showHelp()
-      return done("Invalid arguments")
+      done("Invalid arguments")
+      return
     }
 
     if (
@@ -255,15 +255,17 @@ exports.run = function(argv, done) {
       (typeof argv.o === "string" &&
         argv.o.match(/\.apib$/ || argv.o.match(/\.md$/)))
     ) {
-      return aglio.compileFile(argv.i, argv.o, function(err) {
+      aglio.compileFile(argv.i, argv.o, function(err) {
         if (err) {
           logError(err, argv.verbose)
+          done(err)
+          return
         }
 
-        return done()
+        done()
       })
     } else {
-      return aglio.renderFile(argv.i, argv.o, argv, function(err, warnings) {
+      aglio.renderFile(argv.i, argv.o, argv, function(err, warnings) {
         if (err) {
           const lineNo = getLineNo(err.input, err)
           if (lineNo != null) {
@@ -276,12 +278,13 @@ exports.run = function(argv, done) {
             logError(err, argv.verbose)
           }
 
-          return done(err)
+          done(err)
+          return
         }
 
         logWarnings(warnings)
 
-        return done()
+        done()
       })
     }
   }
