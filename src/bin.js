@@ -94,24 +94,19 @@ const getLineNo = function(input, err) {
 }
 
 // Output warning info
-const logWarnings = warnings =>
-  (() => {
-    const result = []
-    for (const warning of Array.from(warnings || [])) {
-      const lineNo = getLineNo(warnings.input, warning) || 0
-      const errContext = getErrContext(warnings.input, lineNo)
-      console.error(
-        `${cWarn(
-          `>> Line ${lineNo}:`
-        )} ${warning.message} (warning code ${warning.code})`
-      )
-      console.error(cWarn(">> Context"))
-      result.push(
-        console.error(`       ...\n ${errContext.join("\n")} \n       ...`)
-      )
-    }
-    return result
-  })()
+const logWarnings = warnings => {
+  for (const warning of Array.from(warnings || [])) {
+    const lineNo = getLineNo(warnings.input, warning) || 0
+    const errContext = getErrContext(warnings.input, lineNo)
+    console.error(
+      `${cWarn(
+        `>> Line ${lineNo}:`
+      )} ${warning.message} (warning code ${warning.code})`
+    )
+    console.error(cWarn(">> Context"))
+    console.error(`       ...\n ${errContext.join("\n")} \n       ...`)
+  }
+}
 
 // Output an error message
 const logError = function(err, verbose) {

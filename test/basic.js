@@ -15,7 +15,8 @@ const sinon = require("sinon")
 
 const root = path.dirname(__dirname)
 
-const blueprint = fs.readFileSync(path.join(root, "example.apib"), "utf-8")
+const example = path.join(root, "example", "example.apib")
+const blueprint = fs.readFileSync(example, "utf-8")
 
 describe("API Blueprint Renderer", function() {
   after(function() {
@@ -64,30 +65,34 @@ More content...\
   })
 
   it("Case4: Should render a complex document", function(done) {
-    aglio.render(blueprint, "default", function(err, html) {
-      if (err) {
-        return done(err)
+    aglio.render(
+      blueprint,
+      { theme: "default", includePath: path.join(root, "example") },
+      function(err, html) {
+        if (err) {
+          return done(err)
+        }
+
+        assert(html)
+
+        // Ensure include works
+        assert(html.indexOf("This is content that was included"))
+
+        done()
       }
-
-      assert(html)
-
-      // Ensure include works
-      assert(html.indexOf("This is content that was included"))
-
-      done()
-    })
+    )
   })
 
   it("Case5: Should render mixed line endings and tabs properly", function(
     done
   ) {
     const temp = "# GET /message\r\n+ Response 200 (text/plain)\r\r\t\tHello!\n"
-    aglio.render(temp, "default", done)
+    aglio.render(temp, { theme: "default" }, done)
   })
 
   it("Case6: Should render a custom template by filename", function(done) {
     const template = path.join(root, "test", "test.jade")
-    aglio.render("# Blueprint", template, function(err, html) {
+    aglio.render("# Blueprint", { theme: template }, function(err, html) {
       if (err) {
         return done(err)
       }
@@ -102,7 +107,7 @@ More content...\
     const temp = "# GET /message\r\n+ Response 200 (text/plain)\r\r\t\tHello!\n"
     const filteredTemp = temp.replace(/\r\n?/g, "\n").replace(/\t/g, "    ")
 
-    aglio.render(temp, "default", function(err, html, warnings) {
+    aglio.render(temp, { theme: "default" }, function(err, html, warnings) {
       if (err) {
         return done(err)
       }
@@ -114,7 +119,7 @@ More content...\
   })
 
   it("Case8: Should render from/to files", function(done) {
-    const src = path.join(root, "example.apib")
+    const src = example
     const dest = path.join(root, "example.html")
     aglio.renderFile(src, dest, {}, function(e) {
       if (e) {
@@ -129,7 +134,7 @@ More content...\
 
     setTimeout(() => process.stdin.emit("readable", 1))
 
-    aglio.renderFile("-", "example.html", "default", function(err) {
+    aglio.renderFile("-", "example.html", { theme: "default" }, function(err) {
       if (err) {
         process.stdin.read.restore()
         return done(err)
@@ -146,23 +151,26 @@ More content...\
   it("Case10: Should render to stdout", function(done) {
     sinon.stub(console, "log")
 
-    aglio.renderFile(path.join(root, "example.apib"), "-", "default", function(
-      err
-    ) {
-      if (err) {
+    aglio.renderFile(
+      example,
+      "-",
+      { theme: "default", includePath: path.join(root, "example") },
+      function(err) {
+        if (err) {
+          console.log.restore()
+          return done(err)
+        }
+
+        assert(console.log.called)
         console.log.restore()
-        return done(err)
+
+        done()
       }
-
-      assert(console.log.called)
-      console.log.restore()
-
-      done()
-    })
+    )
   })
 
   it("Case11: Should compile from/to files", function(done) {
-    const src = path.join(root, "example.apib")
+    const src = example
     const dest = path.join(root, "example-compiled.apib")
     aglio.compileFile(src, dest, done)
   })
@@ -189,7 +197,7 @@ More content...\
   it("Case13: Should compile to stdout", function(done) {
     sinon.stub(console, "log")
 
-    aglio.compileFile(path.join(root, "example.apib"), "-", function(err) {
+    aglio.compileFile(example, "-", function(err) {
       if (err) {
         console.log.restore()
         return done(err)
@@ -226,11 +234,15 @@ More content...\
   })
 
   it("Case16: Should error on bad template", function(done) {
-    aglio.render(blueprint, "bad", function(err) {
-      assert(err)
+    aglio.render(
+      blueprint,
+      { theme: "bad", includePath: path.join(root, "example") },
+      function(err) {
+        assert(err)
 
-      done()
-    })
+        done()
+      }
+    )
   })
 
   it("Case17: Should error on drafter failure", function(done) {
@@ -238,13 +250,17 @@ More content...\
       callback("error")
     )
 
-    aglio.render(blueprint, "default", function(err) {
-      assert(err)
+    aglio.render(
+      blueprint,
+      { theme: "default", includePath: path.join(root, "example") },
+      function(err) {
+        assert(err)
 
-      drafter.parse.restore()
+        drafter.parse.restore()
 
-      done()
-    })
+        done()
+      }
+    )
   })
 
   it("Case18: Should error on file read failure", function(done) {
@@ -278,18 +294,13 @@ More content...\
       callback("error")
     )
 
-    aglio.renderFile(
-      path.join(root, "example.apib"),
-      "bar",
-      "default",
-      function(err) {
-        assert(err)
+    aglio.renderFile(example, "bar", "default", function(err) {
+      assert(err)
 
-        aglio.render.restore()
+      aglio.render.restore()
 
-        done()
-      }
-    )
+      done()
+    })
   })
 })
 
@@ -327,7 +338,7 @@ describe("Executable", function() {
 
     bin.run({}, err => assert(err))
 
-    bin.run({ i: path.join(root, "example.apib"), o: "-" }, function() {
+    bin.run({ i: example, o: "-" }, function() {
       console.error.restore()
       aglio.renderFile.restore()
       done()
@@ -337,7 +348,7 @@ describe("Executable", function() {
   it("Case23: Should compile a file", function(done) {
     sinon.stub(aglio, "compileFile", (i, o, callback) => callback(null))
 
-    bin.run({ c: 1, i: path.join(root, "example.apib"), o: "-" }, function() {
+    bin.run({ c: 1, i: example, o: "-" }, function() {
       aglio.compileFile.restore()
       done()
     })
@@ -368,9 +379,9 @@ describe("Executable", function() {
           end() {
             aglio.render.restore()
             cb()
-            const file = fs.readFileSync("example.apib", "utf8")
+            const file = fs.readFileSync(example, "utf8")
             setTimeout(function() {
-              fs.writeFileSync("example.apib", file, "utf8")
+              fs.writeFileSync(example, file, "utf8")
               setTimeout(function() {
                 console.log.restore()
                 done()
@@ -391,7 +402,7 @@ describe("Executable", function() {
 
       bin.run(
         {
-          i: path.join(root, "example.apib"),
+          i: example,
           s: true,
           p: 3000,
           h: "localhost",
@@ -407,13 +418,10 @@ describe("Executable", function() {
   it("Case25: Should support custom Jade template shortcut", function(done) {
     sinon.stub(console, "log")
 
-    bin.run(
-      { i: path.join(root, "example.apib"), t: "test.jade", o: "-" },
-      function(err) {
-        console.log.restore()
-        done(err)
-      }
-    )
+    bin.run({ i: example, t: "test.jade", o: "-" }, function(err) {
+      console.log.restore()
+      done(err)
+    })
   })
 
   it("Case26: Should handle theme load errors", function(done) {
@@ -442,7 +450,7 @@ describe("Executable", function() {
 
     sinon.stub(console, "error")
 
-    bin.run({ i: path.join(root, "example.apib"), o: "-" }, function() {
+    bin.run({ i: example, o: "-" }, function() {
       assert(console.error.called)
 
       console.error.restore()

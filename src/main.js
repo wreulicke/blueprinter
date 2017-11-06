@@ -137,7 +137,8 @@ exports.render = function(input, options, done) {
     : input.replace(/\r\n?/g, "\n").replace(/\t/g, "    ")
 
   benchmark.start("parse")
-  return drafter.parse(filteredInput, { type: "ast" }, function(err, res) {
+
+  drafter.parse(filteredInput, { type: "ast" }, function(err, res) {
     let theme
     benchmark.end("parse")
     if (err) {
@@ -165,7 +166,7 @@ exports.render = function(input, options, done) {
     }
 
     benchmark.start("render-total")
-    return theme.render(res.ast, options, function(err, html) {
+    theme.render(res.ast, options, function(err, html) {
       benchmark.end("render-total")
       if (err) {
         return done(err)
@@ -175,7 +176,7 @@ exports.render = function(input, options, done) {
       // error to return
       res.warnings.input = filteredInput
 
-      return done(null, html, res.warnings)
+      done(null, html, res.warnings)
     })
   })
 }
@@ -189,10 +190,10 @@ exports.renderFile = function(inputFile, outputFile, options, done) {
       }
 
       if (outputFile !== "-") {
-        return fs.writeFile(outputFile, html, err => done(err, warnings))
+        fs.writeFile(outputFile, html, err => done(err, warnings))
       } else {
         console.log(html)
-        return done(null, warnings)
+        done(null, warnings)
       }
     })
 
@@ -200,18 +201,18 @@ exports.renderFile = function(inputFile, outputFile, options, done) {
     if (options.includePath == null) {
       options.includePath = path.dirname(inputFile)
     }
-    return fs.readFile(inputFile, { encoding: "utf-8" }, function(err, input) {
+    fs.readFile(inputFile, { encoding: "utf-8" }, function(err, input) {
       if (err) {
         return done(errMsg("Error reading input", err))
       }
-      return render(input.toString())
+      render(input.toString())
     })
   } else {
     process.stdin.setEncoding("utf-8")
-    return process.stdin.on("readable", function() {
+    process.stdin.on("readable", function() {
       const chunk = process.stdin.read()
       if (chunk != null) {
-        return render(chunk)
+        render(chunk)
       }
     })
   }
