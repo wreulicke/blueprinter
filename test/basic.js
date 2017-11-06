@@ -23,11 +23,6 @@ describe("API Blueprint Renderer", function() {
     fs.unlinkSync(path.resolve(root, "example.html"))
   })
 
-  it("Case1: Should load the default theme", function() {
-    const theme = aglio.getTheme("olio")
-    assert.ok(theme != null)
-  })
-
   it("Case2: Should get a list of included files", function() {
     sinon.stub(fs, "readFileSync", () => "I am a test file")
 
