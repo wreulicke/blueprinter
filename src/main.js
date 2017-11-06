@@ -11,32 +11,6 @@ const drafter = require("drafter")
 
 const INCLUDE = /( *)<!-- include\((.*)\) -->/gim
 
-// Legacy template names
-const LEGACY_TEMPLATES = [
-  "default",
-  "default-collapsed",
-  "flatly",
-  "flatly-collapsed",
-  "slate",
-  "slate-collapsed",
-  "cyborg",
-  "cyborg-collapsed",
-]
-
-// Utility for benchmarking
-const benchmark = {
-  start(message) {
-    if (process.env.BENCHMARK) {
-      return console.time(message)
-    }
-  },
-  end(message) {
-    if (process.env.BENCHMARK) {
-      return console.timeEnd(message)
-    }
-  },
-}
-
 // Extend an error's message. Returns the modified error.
 const errMsg = function(message, err) {
   err.message = `${message}: ${err.message}`
@@ -82,75 +56,59 @@ exports.collectPathsSync = function(input, includePath) {
 }
 
 // Get the theme module for a given theme name
-exports.getTheme = function(name) {
-  if (!name || Array.from(LEGACY_TEMPLATES).includes(name)) {
-    name = "olio"
-  }
+exports.getTheme = function(name = "olio") {
   return require(`aglio-theme-${name}`)
 }
 
 // Render an API Blueprint string using a given template
 exports.render = function(input, options, done) {
+  if (arguments.length === 2) {
+    options = {}
+    done = options
+  }
+
   // Support a template name as the options argument
   if (typeof options === "string" || options instanceof String) {
     options = { theme: options }
   }
 
   // Defaults
-  if (options.filterInput == null) {
-    options.filterInput = true
-  }
-  if (options.includePath == null) {
-    options.includePath = process.cwd()
-  }
-  if (options.theme == null) {
-    options.theme = "default"
-  }
+  const {
+    filterInput = true,
+    includePath = process.cwd(),
+    theme = "default",
+  } = options
 
-  // For backward compatibility
-  if (options.template) {
-    options.theme = options.template
-  }
-
-  if (fs.existsSync(options.theme)) {
+  if (fs.existsSync(theme)) {
     console.log(`Setting theme to olio and layout to ${options.theme}`)
     options.themeLayout = options.theme
-    options.theme = "olio"
-  } else if (
-    options.theme !== "default" &&
-    Array.from(LEGACY_TEMPLATES).includes(options.theme)
-  ) {
-    const variables = options.theme.split("-")[0]
-    console.log(`Setting theme to olio and variables to ${variables}`)
-    options.themeVariables = variables
     options.theme = "olio"
   }
 
   // Handle custom directive(s)
-  input = includeDirective(options.includePath, input)
+  input = includeDirective(includePath, input)
 
   // Drafter does not support \r ot \t in the input, so
   // try to intelligently massage the input so that it works.
   // This is required to process files created on Windows.
-  const filteredInput = !options.filterInput
+  const filteredInput = !filterInput
     ? input
     : input.replace(/\r\n?/g, "\n").replace(/\t/g, "    ")
 
-  benchmark.start("parse")
-
   drafter.parse(filteredInput, { type: "ast" }, function(err, res) {
     let theme
-    benchmark.end("parse")
     if (err) {
       err.input = input
-      return done(errMsg("Error parsing input", err))
+      done(errMsg("Error parsing input", err))
+      return
     }
 
     try {
       theme = exports.getTheme(options.theme)
     } catch (error) {
       err = error
-      return done(errMsg("Error getting theme", err))
+      done(errMsg("Error getting theme", err))
+      return
     }
 
     // Setup default options if needed
@@ -165,11 +123,10 @@ exports.render = function(input, options, done) {
       }
     }
 
-    benchmark.start("render-total")
     theme.render(res.ast, options, function(err, html) {
-      benchmark.end("render-total")
       if (err) {
-        return done(err)
+        done(err)
+        return
       }
 
       // Add filtered input to warnings since we have no
@@ -183,10 +140,14 @@ exports.render = function(input, options, done) {
 
 // Render from/to files
 exports.renderFile = function(inputFile, outputFile, options, done) {
-  const render = input =>
+  const render = input => {
+    if (options.includePath == null) {
+      options.includePath = path.dirname(inputFile)
+    }
     exports.render(input, options, function(err, html, warnings) {
       if (err) {
-        return done(err)
+        done(err)
+        return
       }
 
       if (outputFile !== "-") {
@@ -196,14 +157,12 @@ exports.renderFile = function(inputFile, outputFile, options, done) {
         done(null, warnings)
       }
     })
-
+  }
   if (inputFile !== "-") {
-    if (options.includePath == null) {
-      options.includePath = path.dirname(inputFile)
-    }
     fs.readFile(inputFile, { encoding: "utf-8" }, function(err, input) {
       if (err) {
-        return done(errMsg("Error reading input", err))
+        done(errMsg("Error reading input", err))
+        return
       }
       render(input.toString())
     })
@@ -224,26 +183,27 @@ exports.compileFile = function(inputFile, outputFile, done) {
     const compiled = includeDirective(path.dirname(inputFile), input)
 
     if (outputFile !== "-") {
-      return fs.writeFile(outputFile, compiled, err => done(err))
+      fs.writeFile(outputFile, compiled, err => done(err))
     } else {
       console.log(compiled)
-      return done(null)
+      done(null)
     }
   }
 
   if (inputFile !== "-") {
     return fs.readFile(inputFile, { encoding: "utf-8" }, function(err, input) {
       if (err) {
-        return done(errMsg("Error writing output", err))
+        done(errMsg("Error writing output", err))
+        return
       }
-      return compile(input.toString())
+      compile(input.toString())
     })
   } else {
     process.stdin.setEncoding("utf-8")
-    return process.stdin.on("readable", function() {
+    process.stdin.on("readable", function() {
       const chunk = process.stdin.read()
       if (chunk != null) {
-        return compile(chunk)
+        compile(chunk)
       }
     })
   }
