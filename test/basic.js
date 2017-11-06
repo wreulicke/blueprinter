@@ -18,6 +18,10 @@ const root = path.dirname(__dirname)
 const blueprint = fs.readFileSync(path.join(root, "example.apib"), "utf-8")
 
 describe("API Blueprint Renderer", function() {
+  after(function() {
+    fs.unlinkSync(path.resolve(root, "example.html"))
+  })
+
   it("Case1: Should load the default theme", function() {
     const theme = aglio.getTheme("default")
 
@@ -114,10 +118,8 @@ More content...\
     const dest = path.join(root, "example.html")
     aglio.renderFile(src, dest, {}, function(e) {
       if (e) {
-        fs.unlinkSync("example.html")
         return done(e)
       }
-      fs.unlinkSync("example.html")
       done()
     })
   })
