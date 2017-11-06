@@ -9,7 +9,9 @@
   "scripts": {
     "build": "cpx src/**/*.js lib",
     "lint": "eslint bin/*.js src/*.js test/*.js *.js",
-    "test": "mocha --exit"
+    "clean": "rimraf lib",
+    "test": "npm-run-all clean build mocha",
+    "mocha": "mocha --exit"
   },
   "author": "Wreulicke",
   "license": "MIT",
@@ -46,7 +48,9 @@
     "eslint-plugin-mocha": "^4.11.0",
     "eslint-plugin-prettier": "^2.3.1",
     "mocha": "^4.0.1",
+    "npm-run-all": "^4.1.1",
     "prettier": "^1.7.4",
+    "rimraf": "^2.6.2",
     "sinon": "^1.17.2"
   }
 }
