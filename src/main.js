@@ -67,9 +67,9 @@ exports.render = function(input, options, done) {
     done = options
   }
 
-  // Support a template name as the options argument
+  // Removed feature
   if (typeof options === "string" || options instanceof String) {
-    options = { theme: options }
+    throw new Error("Unsupport template name as the options arguments")
   }
 
   // Defaults
