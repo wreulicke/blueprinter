@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "cpx src/**/*.js lib",
+    "lint": "eslint bin/*.js src/*.js test/*.js *.js",
     "test": "mocha --exit"
   },
   "author": "Wreulicke",
@@ -39,8 +40,13 @@
     "yargs": "^3.31.0"
   },
   "devDependencies": {
+    "babel-eslint": "^8.0.1",
     "cpx": "^1.5.0",
+    "eslint": "^4.10.0",
+    "eslint-plugin-mocha": "^4.11.0",
+    "eslint-plugin-prettier": "^2.3.1",
     "mocha": "^4.0.1",
+    "prettier": "^1.7.4",
     "sinon": "^1.17.2"
   }
 }
