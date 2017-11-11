@@ -18,7 +18,7 @@ const resetEditor = ref => {
 class Editor extends React.Component {
   state = {
     document: example,
-    active: "json",
+    active: "view",
   }
   componentDidMount() {
     resetEditor(this.refs.editor)

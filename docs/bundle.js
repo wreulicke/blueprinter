@@ -3437,7 +3437,7 @@ var Editor = function (_React$Component) {
 
     return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Editor.__proto__ || Object.getPrototypeOf(Editor)).call.apply(_ref, [this].concat(args))), _this), _this.state = {
       document: example,
-      active: "json"
+      active: "view"
     }, _this.changeMode = function (mode) {
       return function () {
         return _this.setState({ active: mode });
