@@ -3512,18 +3512,6 @@ var Editor = function (_React$Component) {
               React.createElement(
                 "li",
                 {
-                  className: this.activeClass("json"),
-                  onClick: this.changeMode("json")
-                },
-                React.createElement(
-                  "a",
-                  null,
-                  "JSON"
-                )
-              ),
-              React.createElement(
-                "li",
-                {
                   className: this.activeClass("html"),
                   onClick: this.changeMode("html")
                 },

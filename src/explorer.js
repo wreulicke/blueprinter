@@ -64,12 +64,6 @@ class Editor extends React.Component {
                 <a>Tree</a>
               </li>
               <li
-                className={this.activeClass("json")}
-                onClick={this.changeMode("json")}
-              >
-                <a>JSON</a>
-              </li>
-              <li
                 className={this.activeClass("html")}
                 onClick={this.changeMode("html")}
               >
